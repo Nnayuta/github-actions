@@ -1,17 +1,31 @@
-on: push
-name: 🚀 Deploy website on push
-jobs:
-  web-deploy:
-    name: 🎉 Deploy
+name: 🚀 Deploy to Production
+
+on: 
+  push: 
+    branches:
+      - master
+
+jobs: 
+  build:
+    name: 📂 Build artifact  
     runs-on: ubuntu-latest
-    steps:
-    - name: 🚚 Get latest code
-      uses: actions/checkout@v2
-    
-    - name: 📂 Sync files
-      uses: SamKirkland/FTP-Deploy-Action@4.3.1
-      with:
-        server: ${{ secrets.ftp_server }}
-        username: ${{ secrets.ftp_username }}
-        password: ${{ secrets.ftp_password }}
-        server-dir:  public_html/
+    steps: 
+      - name: Checkout 
+        uses: actions/checkout@v2
+
+        name: Installing dependencies
+        run: npm ci
+
+      - name: 🚚 Build project
+        run: npm run build
+      
+      - name: 📂 Creating deployment artifact
+        env: 
+          GITHUB_SHA: ${{  github.sha  }}
+        run: tar -czf build.tgz "${GITHUB_SHA}".tar.gz build/
+      
+      - name: 📂 Storing artifact
+        uses: actions/upload-artifact@v2
+        with: 
+          name: app-build
+          path: ${{ github.sha }}.tar.gz
